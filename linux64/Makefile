@@ -25,6 +25,7 @@
 # *** ENTER THE TARGET NAME HERE ***
 TARGET      = rh-p12-rn_example
 TARGET2     = rh-p12-rna_example
+TARGET2     = control_test
 
 # important directories used by assorted rules and other variables
 DIR_DXL    = /usr/local
@@ -51,10 +52,12 @@ LIBRARIES  += -lrt -lpthread
 #---------------------------------------------------------------------
 SOURCES = rh-p12-rn.cpp 
 SOURCES2 = rh-p12-rna.cpp 
+SOURCES3 = control_test.cpp 
     # *** OTHER SOURCES GO HERE ***
 
 OBJECTS  = $(addsuffix .o,$(addprefix $(DIR_OBJS)/,$(basename $(notdir $(SOURCES)))))
 OBJECTS2  = $(addsuffix .o,$(addprefix $(DIR_OBJS)/,$(basename $(notdir $(SOURCES2)))))
+OBJECTS3  = $(addsuffix .o,$(addprefix $(DIR_OBJS)/,$(basename $(notdir $(SOURCES3)))))
 #OBJETCS += *** ADDITIONAL STATIC LIBRARIES GO HERE ***
 
 
@@ -69,10 +72,13 @@ $(TARGET): make_directory $(OBJECTS)
 $(TARGET2): make_directory $(OBJECTS2)
 	$(LNKCC) $(LNKFLAGS) $(OBJECTS2) -o $(TARGET2) $(LIBRARIES)
 
-all: $(TARGET) $(TARGET2)
+$(TARGET3): make_directory $(OBJECTS3)
+	$(LNKCC) $(LNKFLAGS) $(OBJECTS3) -o $(TARGET3) $(LIBRARIES)
+
+all: $(TARGET) $(TARGET2) $(TARGET3)
 
 clean:
-	rm -rf $(TARGET) $(TARGET2) $(DIR_OBJS) core *~ *.a *.so *.lo
+	rm -rf $(TARGET) $(TARGET2) $(TARGET3) $(DIR_OBJS) core *~ *.a *.so *.lo
 
 make_directory:
 	mkdir -p $(DIR_OBJS)/
