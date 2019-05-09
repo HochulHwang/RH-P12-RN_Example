@@ -25,7 +25,7 @@
 # *** ENTER THE TARGET NAME HERE ***
 TARGET      = rh-p12-rn_example
 TARGET2     = rh-p12-rna_example
-TARGET2     = control_test
+TARGET3     = control_test
 
 # important directories used by assorted rules and other variables
 DIR_DXL    = /usr/local
