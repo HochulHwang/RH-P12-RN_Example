@@ -200,16 +200,16 @@ void drawPage(void)
   printf(  "*                         RH-P12-RN(A) Example                         *\n"); //  2
   printf(  "************************************************************************\n"); //  3
   printf(  "                                                                        \n"); //  4
-  printf(  "   + MODE +                                                             \n"); //  5
+  printf(  "   +  MODE  +                                                             \n"); //  5
   printf(  "   [ %c ] (C) current control mode                                       \n", (g_curr_mode == MODE_CURRENT_CTRL)?   'V':' '); //  6
   printf(  "   [ %c ] (P) current based position control mode                        \n", (g_curr_mode == MODE_POSITION_CTRL) ? 'V':' '); //  7
   printf(  "                                                                         \n"); //  8
-  printf(  "   + TORQUE +                                                            \n"); //  9
+  printf(  "   +  TORQUE  +                                                            \n"); //  9
 //  printf(  "   [ %c ] (T) torque ON / OFF                                            \n", (g_is_torque_on)?                     'V':' '); // 10
   printf(  "   [ %c ] (T) torque ON                                                  \n", (g_is_torque_on)?                     'V':' '); // 10
 
   printf(  "                                                                        \n"); //  1
-  printf(  "   + CONTROL +                                                         \n"); //  2
+  printf(  "   +  CONTROL  +                                                         \n"); //  2
   printf(  "   [ %c ] (O) Open                                                       \n", (g_curr_control == CTRL_OPEN) ?       'V':' '); //  3
   printf(  "   [ %c ] (L) Close                                                      \n", (g_curr_control == CTRL_CLOSE)?       'V':' '); //  4
   printf(  "   [ %c ] (A) Open & Close auto repeat                                   \n", (g_curr_control == CTRL_REPEAT) ?     'V':' '); //  5
@@ -218,7 +218,7 @@ void drawPage(void)
   else
     printf("                                                                        \n"); //  6
   printf(  "                                                                        \n"); //  7
-  printf(  "   + PARAMETERS +                                                      \n"); //  8
+  printf(  "   +  PARAMETERS  +                                                      \n"); //  8
   printf(  "   goal PWM          [ %4d / %4d ]                                    \n", g_goal_pwm, MAX_PWM);                   //  9
   printf(  "   goal current      [ %4d / %4d ]                                    \n", (short)g_goal_current, MAX_CURRENT);    // 20
   if (g_curr_mode == MODE_POSITION_CTRL)
