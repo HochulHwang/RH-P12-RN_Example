@@ -74,7 +74,6 @@ using namespace std;
 
 enum MODE {
   MODE_CURRENT_CTRL = 0,
-  MODE_POSITION_CTRL = 5
 };
 
 enum CONTROL {
@@ -89,7 +88,7 @@ enum CONTROL {
 int g_curr_row            = ROW_MODE_POSITION;
 int g_curr_col            = COL_CHECK;
 
-MODE g_curr_mode          = MODE_POSITION_CTRL;
+MODE g_curr_mode          = MODE_CURRENT_CTRL;
 bool g_is_torque_on       = false;
 CONTROL g_curr_control    = CTRL_NONE;
 
@@ -145,12 +144,7 @@ void repeatThreadFunc(int val)
       }
       else if (++_stop_cnt > _max_stop_count)
       {
-        if (g_curr_mode == MODE_POSITION_CTRL)
-        {
-          g_packet_handler->write4ByteTxRx(g_port_handler, GRIPPER_ID, ADDR_GOAL_POSITION, 
-                                           (_direction < 0)? MIN_POSITION:MAX_POSITION);
-        }
-        else  // MODE_CURRENT_CTRL
+        if (g_curr_mode == MODE_CURRENT_CTRL)
         {
           g_packet_handler->write2ByteTxRx(g_port_handler, GRIPPER_ID, ADDR_GOAL_CURRENT,
                                            g_goal_current * _direction);
@@ -160,6 +154,7 @@ void repeatThreadFunc(int val)
         _stop_cnt = 0;
       }
     }
+  //}
 
 #if defined(__linux__)
     usleep(100*1000);
@@ -195,37 +190,25 @@ void drawPage(void)
 
   //        0         1         2         3         4         5         6         7  
   //        012345678901234567890123456789012345678901234567890123456789012345678901
-  printf(  "                                                                        \n"); // 00
   printf(  "************************************************************************\n"); //  1
-  printf(  "*                         RH-P12-RN(A) Example                         *\n"); //  2
+  printf(  "*                     Gripper Control Test _ hochul                    *\n"); //  2
+  printf(  "*                      ( current control mode )                        *\n"); //  2
   printf(  "************************************************************************\n"); //  3
   printf(  "                                                                        \n"); //  4
   printf(  "   +  MODE  +                                                             \n"); //  5
   printf(  "   [ %c ] (C) current control mode                                       \n", (g_curr_mode == MODE_CURRENT_CTRL)?   'V':' '); //  6
-  printf(  "   [ %c ] (P) current based position control mode                        \n", (g_curr_mode == MODE_POSITION_CTRL) ? 'V':' '); //  7
-  printf(  "                                                                         \n"); //  8
+  //printf(  "   [ %c ] (P) current based position control mode                        \n", (g_curr_mode == MODE_POSITION_CTRL) ? 'V':' '); //  7
   printf(  "   +  TORQUE  +                                                            \n"); //  9
-//  printf(  "   [ %c ] (T) torque ON / OFF                                            \n", (g_is_torque_on)?                     'V':' '); // 10
   printf(  "   [ %c ] (T) torque ON                                                  \n", (g_is_torque_on)?                     'V':' '); // 10
-
   printf(  "                                                                        \n"); //  1
   printf(  "   +  CONTROL  +                                                         \n"); //  2
   printf(  "   [ %c ] (O) Open                                                       \n", (g_curr_control == CTRL_OPEN) ?       'V':' '); //  3
   printf(  "   [ %c ] (L) Close                                                      \n", (g_curr_control == CTRL_CLOSE)?       'V':' '); //  4
   printf(  "   [ %c ] (A) Open & Close auto repeat                                   \n", (g_curr_control == CTRL_REPEAT) ?     'V':' '); //  5
-  if (g_curr_mode == MODE_POSITION_CTRL)
-    printf("   [ %c ] (G) Go to goal position                                        \n", (g_curr_control == CTRL_POSITION)?    'V':' '); //  6
-  else
-    printf("                                                                        \n"); //  6
   printf(  "                                                                        \n"); //  7
   printf(  "   +  PARAMETERS  +                                                      \n"); //  8
   printf(  "   goal PWM          [ %4d / %4d ]                                    \n", g_goal_pwm, MAX_PWM);                   //  9
   printf(  "   goal current      [ %4d / %4d ]                                    \n", (short)g_goal_current, MAX_CURRENT);    // 20
-  if (g_curr_mode == MODE_POSITION_CTRL)
-  {
-    printf("   goal velocity     [ %4d / %4d ]                                    \n", g_goal_velocity, MAX_VELOCITY);         //  1
-    printf("   goal position     [ %4d / %4d ]                                    \n", g_goal_position, MAX_POSITION);         //  2
-  }
   printf("\n");
 
   gotoCursor(g_curr_row, g_curr_col);
@@ -246,19 +229,6 @@ void moveCursorUp()
     else if (g_curr_row == ROW_GOAL_PWM)
     {
       g_curr_row -= 4;
-    }
-    else if (g_curr_row != ROW_MODE_CURRENT)
-    {
-      g_curr_row--;
-    }
-  }
-  else if (g_curr_mode == MODE_POSITION_CTRL)
-  {
-    if (g_curr_row == ROW_TORQUE_ON_OFF ||
-      g_curr_row == ROW_CTRL_OPEN ||
-      g_curr_row == ROW_GOAL_PWM)
-    {
-      g_curr_row -= 3;
     }
     else if (g_curr_row != ROW_MODE_CURRENT)
     {
@@ -290,22 +260,7 @@ void moveCursorDown()
       g_curr_row++;
     }
   }
-  else if (g_curr_mode == MODE_POSITION_CTRL)
-  {
-    if (g_curr_row == ROW_CTRL_GOAL_POSITION)
-      g_curr_col = COL_VALUE;
-
-    if (g_curr_row == ROW_MODE_POSITION ||
-        g_curr_row == ROW_TORQUE_ON_OFF ||
-        g_curr_row == ROW_CTRL_GOAL_POSITION)
-    {
-      g_curr_row += 3;
-    }
-    else if (g_curr_row != ROW_GOAL_POSITION)
-    {
-      g_curr_row++;
-    }
-  }
+  
   
   gotoCursor(g_curr_row, g_curr_col);
 }
@@ -322,68 +277,7 @@ void moveCursorRight()
 
 void checkValue()
 {
-  if (g_curr_row == ROW_MODE_POSITION)
-  {
-    if (g_curr_mode != MODE_POSITION_CTRL)
-    {
-      // auto repeat thread stop
-      if (g_curr_control == CTRL_REPEAT)
-      {
-        g_flag_repeat_thread = false;
-        g_repeat_thread->join();
-      }
-
-      // torque off
-      if (g_is_torque_on == true)
-        g_packet_handler->write1ByteTxRx(g_port_handler, GRIPPER_ID, ADDR_TORQUE_ENABLE, 0);
-
-#if defined(__linux__)
-      usleep(20 * 1000);
-#elif defined(_WIN32) || defined(_WIN64)
-      Sleep(20);
-#endif
-
-      // set mode to current based position control mode
-      g_packet_handler->write1ByteTxRx(g_port_handler, GRIPPER_ID, ADDR_OPERATING_MODE, MODE_POSITION_CTRL);
-
-#if defined(__linux__)
-      usleep(20 * 1000);
-#elif defined(_WIN32) || defined(_WIN64)
-      Sleep(20);
-#endif
-
-      // torque on
-      if (g_is_torque_on == true)
-        g_packet_handler->write1ByteTxRx(g_port_handler, GRIPPER_ID, ADDR_TORQUE_ENABLE, 1);
-
-      // set goal current
-      if ((short)g_goal_current < 0)
-        g_goal_current = (-1) * g_goal_current;
-      g_packet_handler->write2ByteTxRx(g_port_handler, GRIPPER_ID, ADDR_GOAL_CURRENT, g_goal_current);
-
-      if (g_curr_control == CTRL_REPEAT)
-      {
-        g_flag_repeat_thread = true;
-        g_repeat_thread = new thread(&repeatThreadFunc, 1);
-      }
-
-      g_curr_mode = MODE_POSITION_CTRL;
-
-      gotoCursor(0, 0);
-#if defined(__linux__)
-      system("clear");
-#elif defined(_WIN32) || defined(_WIN64)
-      system("cls");
-#endif
-      drawPage();
-
-      gotoCursor(ROW_MODE_CURRENT, g_curr_col);
-      printf(" ");
-      gotoCursor(g_curr_row, g_curr_col);
-      printf("V");
-    }
-  }
-  else if (g_curr_row == ROW_MODE_CURRENT)
+  if (g_curr_row == ROW_MODE_CURRENT)
   {
     if (g_curr_mode != MODE_CURRENT_CTRL)
     {
@@ -527,10 +421,7 @@ void checkValue()
         g_packet_handler->write1ByteTxRx(g_port_handler, GRIPPER_ID, ADDR_TORQUE_ENABLE, 1);
       }
 
-      if (g_curr_mode == MODE_POSITION_CTRL)
-        g_packet_handler->write4ByteTxRx(g_port_handler, GRIPPER_ID, ADDR_GOAL_POSITION, MAX_POSITION);
-      else
-        g_packet_handler->write2ByteTxRx(g_port_handler, GRIPPER_ID, ADDR_GOAL_CURRENT, (g_goal_current < 0)? -g_goal_current:g_goal_current);
+      g_packet_handler->write2ByteTxRx(g_port_handler, GRIPPER_ID, ADDR_GOAL_CURRENT, (g_goal_current < 0)? -g_goal_current:g_goal_current);
 
       gotoCursor(g_curr_row, g_curr_col);
 #if defined(__linux__)
@@ -578,10 +469,7 @@ void checkValue()
         g_packet_handler->write1ByteTxRx(g_port_handler, GRIPPER_ID, ADDR_TORQUE_ENABLE, 1);
       }
 
-      if (g_curr_mode == MODE_POSITION_CTRL)
-        g_packet_handler->write4ByteTxRx(g_port_handler, GRIPPER_ID, ADDR_GOAL_POSITION, MIN_POSITION);
-      else
-        g_packet_handler->write2ByteTxRx(g_port_handler, GRIPPER_ID, ADDR_GOAL_CURRENT, (g_goal_current < 0)? g_goal_current:-g_goal_current);
+      g_packet_handler->write2ByteTxRx(g_port_handler, GRIPPER_ID, ADDR_GOAL_CURRENT, (g_goal_current < 0)? g_goal_current:-g_goal_current);
 
       gotoCursor(g_curr_row, g_curr_col);
 #if defined(__linux__)
@@ -674,14 +562,7 @@ void UpDownValue(int val)
   {
     g_goal_current += val;
 
-    if (g_curr_mode == MODE_POSITION_CTRL)
-    {
-      if (g_goal_current < MIN_CURRENT)
-        g_goal_current = MIN_CURRENT;
-      else if (g_goal_current > MAX_CURRENT)
-        g_goal_current = MAX_CURRENT;
-    }
-    else if (g_curr_mode == MODE_CURRENT_CTRL)
+    if (g_curr_mode == MODE_CURRENT_CTRL)
     {
       if (g_goal_current < -MAX_CURRENT)
         g_goal_current = -MAX_CURRENT;
@@ -771,8 +652,6 @@ int main(int argc, char* argv[])
   g_packet_handler->read1ByteTxRx(g_port_handler, GRIPPER_ID, ADDR_OPERATING_MODE, &_mode);
   g_curr_mode = (MODE)_mode;
 
-  if (g_curr_mode == MODE_POSITION_CTRL)
-    g_packet_handler->write2ByteTxRx(g_port_handler, GRIPPER_ID, ADDR_GOAL_CURRENT, g_goal_current);
   
   drawPage();
 
@@ -900,16 +779,16 @@ int main(int argc, char* argv[])
       gotoCursor(g_curr_row, g_curr_col);
       checkValue();
     }
-    else if (ch == 'G' || ch == 'g')
-    {
-      if (g_curr_mode == MODE_POSITION_CTRL)
-      {
-        g_curr_row = ROW_CTRL_GOAL_POSITION;
-        g_curr_col = COL_CHECK;
-        gotoCursor(g_curr_row, g_curr_col);
-        checkValue();
-      }
-    }
+    //else if (ch == 'G' || ch == 'g')
+    //{
+      //if (g_curr_mode == MODE_POSITION_CTRL)
+      //{
+        //g_curr_row = ROW_CTRL_GOAL_POSITION;
+        //g_curr_col = COL_CHECK;
+        //gotoCursor(g_curr_row, g_curr_col);
+        //checkValue();
+      //}
+    //}
   }
 
   return 0;
